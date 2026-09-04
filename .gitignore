@@ -1,0 +1,24 @@
+# dependencies
+node_modules
+
+# build
+dist
+build
+.next
+.nuxt
+.output
+coverage
+
+# bun
+.bun-cache
+
+# env
+.env
+.env.*
+!.env.example
+
+# os / ide
+.DS_Store
+.vscode
+.idea
+*.log
