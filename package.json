@@ -2,6 +2,14 @@
   "name": "gudfun",
   "private": true,
   "version": "0.0.0",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:up": "docker compose -f spackages/docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f packages/docker/docker-compose.yml down"
+  },
   "workspaces": [
     "packages/*"
   ],

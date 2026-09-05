@@ -1,17 +1,21 @@
+import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-
+import { Pool } from "pg";
 import { relations } from "./relations";
 
+const connectionString = "postgres://user:password@localhost:6434/postgres";
+
+const pool = new Pool({
+  connectionString,
+});
+
 export const db = drizzle({
-  connection: {
-    user: "",
-    password: "",
-    database: "",
-    host: "",
-    port: 5432,
-  },
+  client: pool,
   relations,
 });
 
-export * from "./schemas";
+db;
+
+export { pool };
+export * as schema from "./schemas";
 export { relations };
