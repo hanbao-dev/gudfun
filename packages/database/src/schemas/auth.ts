@@ -7,6 +7,7 @@ export const user = pgTable("user", {
   email: t.varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: t.boolean("email_verified").notNull(),
   image: t.text("image"),
+  username: t.text("username").unique(),
   createdAt: t
     .timestamp("created_at", { precision: 6, withTimezone: true })
     .notNull(),
@@ -14,7 +15,6 @@ export const user = pgTable("user", {
     .timestamp("updated_at", { precision: 6, withTimezone: true })
     .notNull(),
 });
-
 export const session = pgTable(
   "session",
   {

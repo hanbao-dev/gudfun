@@ -13,6 +13,7 @@ export function AuthenticatedPage() {
           <span className="font-medium">
             {data?.user.name ?? data?.user.email}
           </span>
+          {data?.user.username && ` (@${data.user.username})`}
           ! You are logged in.
         </p>
         <Button
