@@ -1,0 +1,18 @@
+{
+  "name": "api",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts",
+    "type-gen": "rm -rf dist && bunx tsc --project tsconfig.json"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.2",
+    "elysia": "^1.4.30"
+  },
+  "devDependencies": {},
+  "module": "src/index.js"
+}
