@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 
-import * as schema from "./schemas";
+import { relations } from "./relations";
 
 export const db = drizzle({
   connection: {
@@ -8,9 +8,10 @@ export const db = drizzle({
     password: "",
     database: "",
     host: "",
-    port: "",
+    port: 5432,
   },
-  schema,
+  relations,
 });
 
 export * from "./schemas";
+export { relations };
