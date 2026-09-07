@@ -7,7 +7,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:up": "docker compose -f spackages/docker/docker-compose.yml up -d",
+    "db:up": "docker compose -f packages/docker/docker-compose.yml up -d",
     "db:down": "docker compose -f packages/docker/docker-compose.yml down",
     "zero:schema": "drizzle-zero generate --format --schema ./packages/database/src/schemas/index.ts --output ./packages/zero/src/zero-schema.gen.ts --tsconfig ./packages/database/tsconfig.json",
     "zero:dev": "bun --env-file=./zero.env run bunx zero-cache-dev --schema-path=./packages/zero/src/schema.ts"
