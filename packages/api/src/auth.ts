@@ -16,9 +16,6 @@ export const auth = betterAuth({
       clientId: "",
       clientSecret: "",
       overrideUserInfoOnSignIn: true,
-      mapProfileToUser: (profile) => ({
-        username: profile.data.username,
-      }),
     },
   },
   trustedOrigins: ["http://localhost:5173"],

@@ -8,7 +8,7 @@ const defineQueries = defineQueriesWithType<Schema>();
 export const queries = defineQueries({
   users: {
     self: defineQuery(({ ctx }) => {
-      return zql.user.where("id", ctx.userId);
+      return zql.user.where("id", ctx.userId).one();
     }),
   },
 });

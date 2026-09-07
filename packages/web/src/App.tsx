@@ -1,6 +1,7 @@
 import { authClient } from "@/auth-client"
 import { AuthenticatedPage } from "@/pages/AuthenticatedPage"
 import { PublicPage } from "@/pages/PublicPage"
+import { ZeroInit } from "./zero-init"
 
 export function App() {
   const { data, isPending } = authClient.useSession()
@@ -15,7 +16,11 @@ export function App() {
 
   // Single route: example.com — render based on auth state
   if (data?.user) {
-    return <AuthenticatedPage />
+    return (
+      <ZeroInit>
+        <AuthenticatedPage />
+      </ZeroInit>
+    )
   }
 
   return <PublicPage />
