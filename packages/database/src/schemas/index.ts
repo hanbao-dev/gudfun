@@ -1,3 +1,4 @@
 export * from "./auth";
-export * from "./show";
+export * from "./groups";
+export * from "./shows";
 export { relations } from "../relations";

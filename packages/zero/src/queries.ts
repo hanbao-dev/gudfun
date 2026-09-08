@@ -19,19 +19,25 @@ export const queries = defineQueries({
     ),
   },
   shows: {
-    current: defineQuery(({ ctx }) =>
-      zql.show
+    current: defineQuery(({ ctx }) => {
+      const userId = requireUser(ctx);
+      return zql.show
         .where("isActive", true)
-        .whereExists("grants", (grant) =>
-          grant.whereExists("group", (group) =>
-            group.whereExists("members", (member) =>
-              member.where("userId", requireUser(ctx)),
+        .where(({ or, cmp, exists }) =>
+          or(
+            cmp("isPublic", true),
+            exists("grants", (grant) =>
+              grant.whereExists("group", (group) =>
+                group.whereExists("members", (member) =>
+                  member.where("userId", userId),
+                ),
+              ),
             ),
           ),
         )
         .related("segments", (segments) => segments.where("isCurrent", true))
-        .one(),
-    ),
+        .one();
+    }),
   },
   admin: {
     shows: defineQuery(({ ctx }) => {

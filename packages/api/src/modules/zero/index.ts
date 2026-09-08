@@ -46,6 +46,7 @@ export const zero = new Elysia({ prefix: "/zero" })
             return mutator.fn({
               args,
               tx,
+              // Mutators resolve admin status inside tx; no pre-transaction snapshot.
               ctx: { userId },
             });
           }),

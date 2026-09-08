@@ -80,15 +80,27 @@ export const mutators = defineMutators({
     ),
   },
   shows: {
-    create: defineMutator(showInput, async ({ tx, ctx, args }) => {
-      await requireAdmin(tx, ctx);
-      await tx.mutate.show.insert({ ...args, isActive: false });
-    }),
+    create: defineMutator(
+      showInput.extend({ isPublic: z.boolean() }),
+      async ({ tx, ctx, args }) => {
+        await requireAdmin(tx, ctx);
+        await tx.mutate.show.insert({ ...args, isActive: false });
+      },
+    ),
     update: defineMutator(showInput, async ({ tx, ctx, args }) => {
       await requireAdmin(tx, ctx);
       await requireShow(tx, args.id);
       await tx.mutate.show.update(args);
     }),
+    setVisibility: defineMutator(
+      z.object({ id: idSchema, isPublic: z.boolean() }),
+      async ({ tx, ctx, args }) => {
+        await requireAdmin(tx, ctx);
+        await requireShow(tx, args.id);
+        // Preserve grants when public so switching back restores the private audience.
+        await tx.mutate.show.update(args);
+      },
+    ),
     setActive: defineMutator(
       z.object({ id: idSchema, isActive: z.boolean() }),
       async ({ tx, ctx, args }) => {

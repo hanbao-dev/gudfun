@@ -155,16 +155,18 @@ export function AdminPanel() {
         <section className="space-y-3">
           <h3 className="font-semibold">Shows</h3>
           <form
-            className="flex gap-2"
+            className="flex flex-wrap gap-2"
             onSubmit={(e) => {
               e.preventDefault()
-              const title = String(new FormData(e.currentTarget).get("title"))
+              const data = new FormData(e.currentTarget)
+              const title = String(data.get("title"))
               void run(() =>
                 zero.mutate(
                   mutators.shows.create({
                     id: crypto.randomUUID(),
                     title,
                     features: [],
+                    isPublic: data.get("visibility") === "public",
                   })
                 )
               )
@@ -177,6 +179,14 @@ export function AdminPanel() {
               required
               maxLength={200}
             />
+            <NativeSelect
+              name="visibility"
+              aria-label="New show visibility"
+              defaultValue="private"
+            >
+              <NativeSelectOption value="private">Private</NativeSelectOption>
+              <NativeSelectOption value="public">Public</NativeSelectOption>
+            </NativeSelect>
             <Button type="submit">Create show</Button>
           </form>
           <NativeSelect
@@ -238,42 +248,68 @@ export function AdminPanel() {
                 {show.isActive ? "Deactivate show" : "Activate show"}
               </Button>
               <p className="text-sm text-muted-foreground">
-                Deactivate the current show before activating another. Viewing
-                requires group access, even for admins.
+                Deactivate the current show before activating another.
               </p>
-              <h4 className="font-medium">Group access</h4>
-              {!groups.length && (
-                <p className="text-sm text-muted-foreground">
-                  Create a group to grant access.
-                </p>
+              <h4 className="font-medium">Visibility</h4>
+              <NativeSelect
+                aria-label="Show visibility"
+                value={show.isPublic ? "public" : "private"}
+                onChange={(e) =>
+                  void run(() =>
+                    zero.mutate(
+                      mutators.shows.setVisibility({
+                        id: show.id,
+                        isPublic: e.target.value === "public",
+                      })
+                    )
+                  )
+                }
+              >
+                <NativeSelectOption value="private">Private</NativeSelectOption>
+                <NativeSelectOption value="public">Public</NativeSelectOption>
+              </NativeSelect>
+              <p className="text-sm text-muted-foreground">
+                {show.isPublic
+                  ? "All logged-in users can view this show. Saved group grants apply only when private."
+                  : "Only members of allowed groups can view this show, including admins. Without groups, nobody has access."}
+              </p>
+              {!show.isPublic && (
+                <div className="space-y-3">
+                  <h4 className="font-medium">Group access</h4>
+                  {!groups.length && (
+                    <p className="text-sm text-muted-foreground">
+                      Create a group to grant access.
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {groups.map((g) => {
+                      const enabled = show.grants.some(
+                        (grant) => grant.groupId === g.id
+                      )
+                      return (
+                        <Button
+                          key={g.id}
+                          variant={enabled ? "default" : "outline"}
+                          aria-pressed={enabled}
+                          onClick={() =>
+                            void run(() =>
+                              zero.mutate(
+                                mutators.shows.access({
+                                  showId: show.id,
+                                  groupId: g.id,
+                                  enabled: !enabled,
+                                })
+                              )
+                            )
+                          }
+                        >
+                          {g.name}: {enabled ? "allowed" : "no access"}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
-              <div className="flex flex-wrap gap-2">
-                {groups.map((g) => {
-                  const enabled = show.grants.some(
-                    (grant) => grant.groupId === g.id
-                  )
-                  return (
-                    <Button
-                      key={g.id}
-                      variant={enabled ? "default" : "outline"}
-                      aria-pressed={enabled}
-                      onClick={() =>
-                        void run(() =>
-                          zero.mutate(
-                            mutators.shows.access({
-                              showId: show.id,
-                              groupId: g.id,
-                              enabled: !enabled,
-                            })
-                          )
-                        )
-                      }
-                    >
-                      {g.name}: {enabled ? "allowed" : "no access"}
-                    </Button>
-                  )
-                })}
-              </div>
               <h4 className="font-medium">Available features</h4>
               <p className="text-sm text-muted-foreground">
                 Configuration only; these experiences are not implemented yet.

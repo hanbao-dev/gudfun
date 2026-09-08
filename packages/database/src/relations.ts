@@ -1,8 +1,9 @@
 import { defineRelations } from "drizzle-orm";
 
 import * as auth from "./schemas/auth";
-import * as shows from "./schemas/show";
-const schema = { ...auth, ...shows };
+import * as shows from "./schemas/shows";
+import * as groups from "./schemas/groups";
+const schema = { ...auth, ...groups, ...shows };
 
 export const relations = defineRelations(schema, (r) => ({
   user: {

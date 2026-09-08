@@ -12,16 +12,19 @@ your chosen existing user, then sign out and back in to refresh the auth session
 There is no public mutation or auth input for changing this flag.
 
 An admin can create groups, toggle membership for existing users, create an
-inactive show, grant groups access, add/reorder segments, select a current
+inactive public or private show, grant groups access to private shows, add/reorder segments, select a current
 segment, and activate the show. Deactivate the previous show before activating
-another. A show without grants is private to everyone, including admins in the
-viewer experience. Admin management queries can still inspect inactive and
+another. Public shows are visible to all logged-in users without groups. Private shows
+without grants are visible to nobody, including admins in the viewer experience.
+Existing shows default to private. Switching to public preserves saved grants,
+which apply again when the show is made private. Admin management queries can still inspect inactive and
 unassigned shows.
 
-The viewer resolves only an active show with a grant to one of their groups.
+The viewer resolves only an active show that is public or has a grant to one of
+their groups. Public visibility still requires authentication.
 Its segment relation includes only the current segment. No active show and no
 access deliberately share the same empty state. Removing a membership, grant,
-or group removes that access. Group deletion also removes its memberships and
+or group removes that private-show access. Group deletion also removes its memberships and
 grants.
 
 ## Extending the foundation
@@ -41,7 +44,11 @@ is included; the application continues to use its existing Zero data layer.
 
 All admin mutations check the current database user inside the transaction.
 Admin query context is constructed by the API from a fresh database lookup;
-client-provided admin claims are not accepted by that endpoint. Viewer access is
+client-provided admin claims are not accepted by that endpoint. Mutations only
+need userId in server context: they resolve isAdmin within the transaction rather
+than trusting a pre-transaction flag. The optional context flag is for queries.
+Group and membership tables live in schemas/groups; show tables, segments, and
+show access grants live in schemas/shows in the database package. Viewer access is
 part of the query itself. Authentication remains exclusively through X.
 
 ## Validation

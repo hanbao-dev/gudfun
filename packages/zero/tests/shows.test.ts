@@ -9,6 +9,7 @@ import {
 import { mustGetMutator, type ReadonlyJSONValue } from "@rocicorp/zero";
 import { schema, zql } from "../src/zero-schema.gen";
 import { mutators } from "../src/mutators";
+import type { QueryContext } from "../src/context";
 import { queries } from "../src/queries";
 import {
   featuresSchema,
@@ -35,7 +36,11 @@ const database = new ZQLDatabase(
   schema,
 );
 const admin = { userId: "admin", isAdmin: true };
-async function mutate(name: string, args: ReadonlyJSONValue, ctx = admin) {
+async function mutate(
+  name: string,
+  args: ReadonlyJSONValue,
+  ctx: QueryContext = admin,
+) {
   return database.transaction((tx) =>
     mustGetMutator(mutators, name).fn({ tx, args, ctx }),
   );
@@ -89,8 +94,9 @@ test("authentication and admin authorization cannot be bypassed with context cla
     ["groups.rename", { id: "bad", name: "bad" }],
     ["groups.remove", { id: "bad" }],
     ["groups.membership", { groupId: "bad", userId: "member", enabled: true }],
-    ["shows.create", { id: "bad", title: "bad", features: [] }],
+    ["shows.create", { id: "bad", title: "bad", features: [], isPublic: true }],
     ["shows.update", { id: "bad", title: "bad", features: [] }],
+    ["shows.setVisibility", { id: "bad", isPublic: true }],
     ["shows.setActive", { id: "bad", isActive: true }],
     ["shows.access", { showId: "bad", groupId: "bad", enabled: true }],
     [
@@ -114,6 +120,7 @@ test("show lifecycle, membership and grants determine visibility", async () => {
   await mutate("shows.create", {
     id: "s",
     title: "First show",
+    isPublic: false,
     features: ["chat"],
   });
   await mutate("shows.access", { showId: "s", groupId: "g", enabled: true });
@@ -162,8 +169,48 @@ test("show lifecycle, membership and grants determine visibility", async () => {
   expect((await current("member"))?.features).toEqual(["reactions"]);
 });
 
+test("public shows need no groups; switching visibility restores private access", async () => {
+  await mutate(
+    "shows.setVisibility",
+    { id: "s", isPublic: true },
+    { userId: "admin" },
+  );
+  expect((await current("outsider"))?.id).toBe("s");
+  expect((await current("admin"))?.id).toBe("s");
+  expect(() =>
+    queries.shows.current.fn({ args: undefined, ctx: { userId: undefined } }),
+  ).toThrow("Unauthorized");
+  await mutate("shows.setVisibility", { id: "s", isPublic: false });
+  expect(await current("outsider")).toBeUndefined();
+  expect((await current("member"))?.id).toBe("s");
+  await mutate("shows.setActive", { id: "s", isActive: false });
+  await mutate("shows.create", {
+    id: "public",
+    title: "Open show",
+    features: [],
+    isPublic: true,
+  });
+  expect(await current("outsider")).toBeUndefined();
+  await mutate("shows.setActive", { id: "public", isActive: true });
+  for (const user of ["admin", "member", "outsider"])
+    expect((await current(user))?.id).toBe("public");
+  await mutate("shows.setVisibility", { id: "public", isPublic: false });
+  for (const user of ["admin", "member", "outsider"])
+    expect(await current(user)).toBeUndefined();
+  await expect(
+    mutate("shows.setVisibility", { id: "public", isPublic: "public" }),
+  ).rejects.toThrow();
+  await mutate("shows.setActive", { id: "public", isActive: false });
+  await mutate("shows.setActive", { id: "s", isActive: true });
+});
+
 test("activation is enforced by both mutations and the database", async () => {
-  await mutate("shows.create", { id: "s2", title: "Second", features: [] });
+  await mutate("shows.create", {
+    id: "s2",
+    title: "Second",
+    features: [],
+    isPublic: false,
+  });
   await expect(
     mutate("shows.setActive", { id: "s2", isActive: true }),
   ).rejects.toThrow("Deactivate");
