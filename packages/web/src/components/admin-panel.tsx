@@ -35,8 +35,7 @@ export function AdminPanel() {
     return <p role="status">Loading admin…</p>
 
   return (
-    <section className="space-y-6 border-t pt-6">
-      <h2 className="text-xl font-semibold">Admin</h2>
+    <section className="space-y-6">
       {error && (
         <p role="alert" className="text-destructive">
           {error}

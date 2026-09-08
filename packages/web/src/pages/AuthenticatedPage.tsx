@@ -1,7 +1,6 @@
 import { authClient } from "@/auth-client"
 import { Button } from "@/components/ui/button"
-import { AdminPanel } from "@/components/admin-panel"
-import { ShowView } from "@/components/show-view"
+import { Link, Outlet } from "react-router"
 import { useQuery } from "@rocicorp/zero/react"
 import { queries } from "zero"
 
@@ -13,12 +12,28 @@ export function AuthenticatedPage() {
         <span className="text-sm text-muted-foreground">
           {user?.username ?? user?.name}
         </span>
-        <Button variant="outline" onClick={() => authClient.signOut()}>
-          Log out
-        </Button>
+        <nav
+          aria-label="Application"
+          className="flex flex-wrap items-center gap-2"
+        >
+          <Button variant="ghost" nativeButton={false} render={<Link to="/" />}>
+            Show
+          </Button>
+          {user?.isAdmin && (
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to="/admin/settings" />}
+            >
+              Admin settings
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => authClient.signOut()}>
+            Log out
+          </Button>
+        </nav>
       </header>
-      <ShowView />
-      {user?.isAdmin && <AdminPanel />}
+      <Outlet />
     </main>
   )
 }

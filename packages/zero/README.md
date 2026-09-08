@@ -11,6 +11,12 @@ restart the API and Zero cache to pick up the schema. The feature migration adds
 your chosen existing user, then sign out and back in to refresh the auth session.
 There is no public mutation or auth input for changing this flag.
 
+Admin management lives at `/admin/settings`, linked from the authenticated app
+for admins. Its client route guard waits for the user record and redirects
+non-admins to `/`; signed-out visitors return to the login page. The main `/`
+page only displays the current show. API authorization still protects all
+management operations independently of this SPA guard.
+
 An admin can create groups, toggle membership for existing users, create an
 inactive public or private show, grant groups access to private shows, add/reorder segments, select a current
 segment, and activate the show. Deactivate the previous show before activating
