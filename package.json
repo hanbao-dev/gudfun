@@ -10,7 +10,7 @@
     "db:up": "docker compose -f packages/docker/docker-compose.yml up -d",
     "db:down": "docker compose -f packages/docker/docker-compose.yml down",
     "zero:schema": "drizzle-zero generate --format --schema ./packages/database/src/schemas/index.ts --output ./packages/zero/src/zero-schema.gen.ts --tsconfig ./packages/database/tsconfig.json",
-    "zero:dev": "bun --env-file=./zero.env run bunx zero-cache-dev --schema-path=./packages/zero/src/schema.ts"
+    "zero:dev": "bun --env-file=./zero.env run bunx zero-cache-dev --schema-path=./packages/zero/src/zero-schema.gen.ts"
   },
   "workspaces": [
     "packages/*"
