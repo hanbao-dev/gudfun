@@ -5,7 +5,7 @@ export function PublicPage() {
   const signIn = async () => {
     await authClient.signIn.social({
       provider: "twitter",
-      callbackURL: "http://localhost:5173/",
+      callbackURL: window.location.origin,
     })
   }
 

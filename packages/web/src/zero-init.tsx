@@ -3,24 +3,28 @@ import { ZeroProvider } from "@rocicorp/zero/react"
 import { useMemo, type ReactNode } from "react"
 import { mutators } from "zero"
 import { schema } from "zero"
-import { authClient } from "./auth-client.ts"
+import { config } from "./config"
 
-export function ZeroInit({ children }: { children: ReactNode }) {
-  const { data } = authClient.useSession()
-
+export function ZeroInit({
+  children,
+  userId,
+}: {
+  children: ReactNode
+  userId: string
+}) {
   const options = useMemo(
     () =>
       ({
         schema,
-        cacheURL: "http://localhost:4848",
-        userID: data?.user.id,
+        cacheURL: config.zeroCacheUrl,
+        userID: userId,
         mutators,
         logLevel: "info",
-        mutateURL: `http://localhost:3000/api/zero/mutate`,
-        queryURL: `http://localhost:3000/api/zero/query`,
-        context: { userId: data?.user.id },
+        mutateURL: new URL("/api/zero/mutate", config.apiUrl).toString(),
+        queryURL: new URL("/api/zero/query", config.apiUrl).toString(),
+        context: { userId },
       }) as const satisfies ZeroOptions,
-    [data]
+    [userId]
   )
 
   return <ZeroProvider {...options}>{children}</ZeroProvider>
