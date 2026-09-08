@@ -4,6 +4,7 @@ import * as t from "drizzle-orm/pg-core";
 export const user = pgTable("user", {
   id: t.text("id").primaryKey(),
   name: t.text("name").notNull(),
+  isAdmin: t.boolean("is_admin").notNull().default(false),
   email: t.varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: t.boolean("email_verified").notNull(),
   image: t.text("image"),

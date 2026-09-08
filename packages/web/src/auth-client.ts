@@ -1,5 +1,8 @@
 import { createAuthClient } from "better-auth/react"
-import { usernameClient } from "better-auth/client/plugins"
+import {
+  usernameClient,
+  inferAdditionalFields,
+} from "better-auth/client/plugins"
 import { config } from "./config"
 
 export const authClient = createAuthClient({
@@ -8,5 +11,10 @@ export const authClient = createAuthClient({
   fetchOptions: {
     credentials: "include",
   },
-  plugins: [usernameClient({ displayUsername: false })],
+  plugins: [
+    inferAdditionalFields({
+      user: { isAdmin: { type: "boolean", defaultValue: false, input: false } },
+    }),
+    usernameClient({ displayUsername: false }),
+  ],
 })

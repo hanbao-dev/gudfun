@@ -17,7 +17,7 @@ export function App() {
   // Single route: example.com — render based on auth state
   if (data?.user) {
     return (
-      <ZeroInit userId={data.user.id}>
+      <ZeroInit userId={data.user.id} isAdmin={data.user.isAdmin}>
         <AuthenticatedPage />
       </ZeroInit>
     )

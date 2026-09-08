@@ -1,15 +1,52 @@
-# shared
+# Show foundation
 
-To install dependencies:
+Show definitions, permission-scoped queries, and mutations live in this shared
+package. UI components are replaceable consumers of these operations.
 
-```bash
-bun install
-```
+## Local setup
 
-To run:
+Run `bun run db:migrate` with your existing local database configuration, then
+restart the API and Zero cache to pick up the schema. The feature migration adds
+`user.is_admin` with a default of `false`. Manually set that column to `true` for
+your chosen existing user, then sign out and back in to refresh the auth session.
+There is no public mutation or auth input for changing this flag.
 
-```bash
-bun run index.ts
-```
+An admin can create groups, toggle membership for existing users, create an
+inactive show, grant groups access, add/reorder segments, select a current
+segment, and activate the show. Deactivate the previous show before activating
+another. A show without grants is private to everyone, including admins in the
+viewer experience. Admin management queries can still inspect inactive and
+unassigned shows.
 
-This project was created using `bun init` in bun v1.2.22. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+The viewer resolves only an active show with a grant to one of their groups.
+Its segment relation includes only the current segment. No active show and no
+access deliberately share the same empty state. Removing a membership, grant,
+or group removes that access. Group deletion also removes its memberships and
+grants.
+
+## Extending the foundation
+
+`src/show-definitions.ts` defines valid segment and feature keys and labels.
+Persisted keys use text/JSON, so adding a key does not require a SQL migration.
+Only `placeholder` segments exist. `chat` and `reactions` are reserved configuration
+flags with no implemented experience. `hasShowFeature` is the shared feature
+check. Add future renderers independently of the queries and mutations.
+
+The basic show state is active/inactive. PostgreSQL partial unique indexes enforce
+one active show globally and one current segment per show, including competing
+writes. Selecting a segment clears the previous selection in the same transaction.
+Ordering validates the complete segment ID list and sorts ties by ID, so concurrent
+appends remain deterministic. No scheduling, media, or custom realtime transport
+is included; the application continues to use its existing Zero data layer.
+
+All admin mutations check the current database user inside the transaction.
+Admin query context is constructed by the API from a fresh database lookup;
+client-provided admin claims are not accepted by that endpoint. Viewer access is
+part of the query itself. Authentication remains exclusively through X.
+
+## Validation
+
+`bun test` runs the generated migrations and the real Zero queries/mutations
+against an isolated in-memory PGlite database; it never connects to your local
+application database. Tests cover authorization, access revocation, state changes,
+segment ordering/selection, validation, and database constraints.

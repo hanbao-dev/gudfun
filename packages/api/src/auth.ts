@@ -23,6 +23,11 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  user: {
+    additionalFields: {
+      isAdmin: { type: "boolean", defaultValue: false, input: false },
+    },
+  },
   plugins: [username({ displayUsername: false })],
   socialProviders: {
     twitter: {
