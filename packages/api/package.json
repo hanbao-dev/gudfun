@@ -2,8 +2,9 @@
   "name": "api",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test",
     "dev": "bun --env-file=../../.env --watch src/index.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "type-gen": "rm -rf dist && bunx tsc --project tsconfig.json"
   },
   "exports": {

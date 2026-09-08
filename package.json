@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "lint": "bun --cwd packages/web run lint",
+    "typecheck": "bun --cwd packages/web run typecheck && bun --cwd packages/api run typecheck && bun --cwd packages/database run typecheck",
+    "test": "bun test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
