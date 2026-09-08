@@ -2,17 +2,22 @@
   "name": "api",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test",
     "dev": "bun --env-file=../../.env --watch src/index.ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "type-gen": "rm -rf dist && bunx tsc --project tsconfig.json"
   },
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.2",
     "@elysia/cors": "^1.4.2",
+    "@rocicorp/zero": "^1.9.0",
     "better-auth": "^1.7.2",
-    "elysia": "^1.4.30"
+    "database": "workspace:*",
+    "elysia": "^1.4.30",
+    "zero": "workspace:*"
   },
   "devDependencies": {},
   "module": "src/index.js"

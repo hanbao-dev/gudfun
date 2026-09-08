@@ -13,6 +13,8 @@ function requiredEnv(name: string) {
   return value;
 }
 
+export const webOrigin = requiredEnv("WEB_ORIGIN");
+
 export const auth = betterAuth({
   basePath: "/api/auth",
   baseURL: requiredEnv("BETTER_AUTH_URL"),
@@ -29,5 +31,5 @@ export const auth = betterAuth({
       overrideUserInfoOnSignIn: true,
     },
   },
-  trustedOrigins: [requiredEnv("WEB_ORIGIN")],
+  trustedOrigins: [webOrigin],
 });

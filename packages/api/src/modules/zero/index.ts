@@ -11,8 +11,6 @@ export const zero = new Elysia({ prefix: "/zero" })
   .post(
     "/query",
     async ({ request, user }) => {
-      console.log("user", user);
-      console.log("request", request);
       const result = await handleQueryRequest({
         handler: (name, args) => {
           const query = mustGetQuery(queries, name);

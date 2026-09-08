@@ -1,11 +1,11 @@
 import { Elysia } from "elysia";
-import { auth } from "./auth";
+import { auth, webOrigin } from "./auth";
 import { betterAuth } from "./macros/better-auth";
 import { cors } from "@elysia/cors";
 import { zero } from "./modules/zero";
 
 const app = new Elysia({ prefix: "/api" })
-  .use(cors())
+  .use(cors({ origin: webOrigin, credentials: true }))
   .mount(auth.handler)
   .use(betterAuth)
   .use(zero)
