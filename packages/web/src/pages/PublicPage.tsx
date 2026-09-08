@@ -1,8 +1,7 @@
 import { authClient } from "@/auth-client"
-import { Button } from "@base-ui/react/button"
+import { Button } from "@/components/ui/button"
 
 export function PublicPage() {
-  const { data, isPending } = authClient.useSession()
   const signIn = async () => {
     await authClient.signIn.social({
       provider: "twitter",
@@ -15,22 +14,11 @@ export function PublicPage() {
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-semibold">Unauthenticated Page</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This page is public — no login required.
+          Sign in with X to continue.
         </p>
 
         <div className="mt-6 rounded-lg border p-4 text-sm">
-          {isPending ? (
-            <p className="text-muted-foreground">Loading session...</p>
-          ) : data?.user ? (
-            <p>
-              Logged in as{" "}
-              <span className="font-medium">
-                {data.user.name ?? data.user.email}
-              </span>
-            </p>
-          ) : (
-            <Button onClick={signIn}>Sign in</Button>
-          )}
+          <Button onClick={signIn}>Sign in with X</Button>
         </div>
       </div>
     </div>
