@@ -32,6 +32,9 @@
   PR when the work is ready for review. Do not mix unrelated cleanup into it.
 - Local `.env` files and environment variables are acceptable for now. Do not
   add deployment configuration or production-secret management unless asked.
+- Never read, print, commit, or modify values in `.env` files. Ask the user to
+  populate local secrets themselves, and use only variable names in code,
+  documentation, and status updates.
 - Before changing a stack area below, consult its linked `llms.txt` and the
   local code that uses it. Prefer the documented, current API over memory.
 

@@ -3,9 +3,20 @@ import { username } from "better-auth/plugins";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { db, schema } from "database";
 
+function requiredEnv(name: string) {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
 export const auth = betterAuth({
   basePath: "/api/auth",
-  baseURL: "http://localhost:3000",
+  baseURL: requiredEnv("BETTER_AUTH_URL"),
+  secret: requiredEnv("BETTER_AUTH_SECRET"),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -13,10 +24,10 @@ export const auth = betterAuth({
   plugins: [username({ displayUsername: false })],
   socialProviders: {
     twitter: {
-      clientId: "",
-      clientSecret: "",
+      clientId: requiredEnv("TWITTER_CLIENT_ID"),
+      clientSecret: requiredEnv("TWITTER_CLIENT_SECRET"),
       overrideUserInfoOnSignIn: true,
     },
   },
-  trustedOrigins: ["http://localhost:5173"],
+  trustedOrigins: [requiredEnv("WEB_ORIGIN")],
 });
