@@ -21,5 +21,8 @@
   "type": "module",
   "dependencies": {
     "drizzle-zero": "1.0.0-beta.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

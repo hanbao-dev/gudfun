@@ -8,8 +8,10 @@ import { config } from "./config"
 export function ZeroInit({
   children,
   userId,
+  isAdmin,
 }: {
   children: ReactNode
+  isAdmin: boolean
   userId: string
 }) {
   const options = useMemo(
@@ -22,9 +24,9 @@ export function ZeroInit({
         logLevel: "info",
         mutateURL: new URL("/api/zero/mutate", config.apiUrl).toString(),
         queryURL: new URL("/api/zero/query", config.apiUrl).toString(),
-        context: { userId },
+        context: { userId, isAdmin },
       }) as const satisfies ZeroOptions,
-    [userId]
+    [userId, isAdmin]
   )
 
   return <ZeroProvider {...options}>{children}</ZeroProvider>

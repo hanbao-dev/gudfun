@@ -1,9 +1,11 @@
+import { Navigate, useLocation } from "react-router"
 import { authClient } from "@/auth-client"
 import { AuthenticatedPage } from "@/pages/AuthenticatedPage"
 import { PublicPage } from "@/pages/PublicPage"
 import { ZeroInit } from "./zero-init"
 
 export function App() {
+  const location = useLocation()
   const { data, isPending } = authClient.useSession()
 
   if (isPending) {
@@ -14,14 +16,15 @@ export function App() {
     )
   }
 
-  // Single route: example.com — render based on auth state
   if (data?.user) {
     return (
-      <ZeroInit userId={data.user.id}>
+      <ZeroInit userId={data.user.id} isAdmin={data.user.isAdmin}>
         <AuthenticatedPage />
       </ZeroInit>
     )
   }
+
+  if (location.pathname !== "/") return <Navigate to="/" replace />
 
   return <PublicPage />
 }

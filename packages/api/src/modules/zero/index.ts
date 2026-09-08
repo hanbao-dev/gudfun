@@ -4,6 +4,7 @@ import { betterAuth } from "../../macros/better-auth";
 import { handleMutateRequest, handleQueryRequest } from "@rocicorp/zero/server";
 import { mustGetMutator, mustGetQuery } from "@rocicorp/zero";
 import { mutators, queries, schema } from "zero";
+import { db } from "database";
 import { dbProvider } from "./db";
 
 export const zero = new Elysia({ prefix: "/zero" })
@@ -11,10 +12,17 @@ export const zero = new Elysia({ prefix: "/zero" })
   .post(
     "/query",
     async ({ request, user }) => {
+      // Resolve privileges from the database, never from client arguments or a cached session.
+      const currentUser = await db.query.user.findFirst({
+        where: { id: user.id },
+      });
       const result = await handleQueryRequest({
         handler: (name, args) => {
           const query = mustGetQuery(queries, name);
-          return query.fn({ args, ctx: { userId: user.id } });
+          return query.fn({
+            args,
+            ctx: { userId: user.id, isAdmin: currentUser?.isAdmin === true },
+          });
         },
         schema,
         request,
@@ -38,6 +46,7 @@ export const zero = new Elysia({ prefix: "/zero" })
             return mutator.fn({
               args,
               tx,
+              // Mutators resolve admin status inside tx; no pre-transaction snapshot.
               ctx: { userId },
             });
           }),
