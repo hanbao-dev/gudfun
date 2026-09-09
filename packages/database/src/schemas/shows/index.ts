@@ -8,14 +8,27 @@ export const show = t.pgTable(
     id: t.text().primaryKey(),
     title: t.text().notNull(),
     isPublic: t.boolean("is_public").notNull().default(false),
-    isActive: t.boolean("is_active").notNull().default(false),
+    status: t.text().notNull().default("draft"),
+    scheduledStart: t.timestamp("scheduled_start", { withTimezone: true }),
+    actualStart: t.timestamp("actual_start", { withTimezone: true }),
+    actualEnd: t.timestamp("actual_end", { withTimezone: true }),
     features: t.jsonb().$type<string[]>().notNull().default([]),
   },
   (table) => [
     t
-      .uniqueIndex("show_one_active_idx")
-      .on(table.isActive)
-      .where(sql`${table.isActive} = true`),
+      .uniqueIndex("show_one_live_idx")
+      .on(table.status)
+      .where(sql`${table.status} = 'live'`),
+    t.index("show_status_schedule_idx").on(table.status, table.scheduledStart),
+    t.check(
+      "show_lifecycle",
+      sql`(
+      (${table.status} = 'draft' AND ${table.scheduledStart} IS NULL AND ${table.actualStart} IS NULL AND ${table.actualEnd} IS NULL) OR
+      (${table.status} = 'scheduled' AND ${table.scheduledStart} IS NOT NULL AND ${table.actualStart} IS NULL AND ${table.actualEnd} IS NULL) OR
+      (${table.status} = 'live' AND ${table.actualEnd} IS NULL) OR
+      (${table.status} = 'ended' AND ${table.actualEnd} IS NOT NULL)
+    ) AND (${table.actualStart} IS NULL OR ${table.actualEnd} IS NULL OR ${table.actualEnd} >= ${table.actualStart})`,
+    ),
   ],
 );
 
@@ -47,6 +60,11 @@ export const segment = t.pgTable(
       .references(() => show.id, { onDelete: "cascade" }),
     title: t.text().notNull(),
     type: t.text().notNull(),
+    configuration: t
+      .jsonb()
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
     position: t.integer().notNull(),
     isCurrent: t.boolean("is_current").notNull().default(false),
   },

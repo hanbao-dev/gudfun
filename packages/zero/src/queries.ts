@@ -22,7 +22,7 @@ export const queries = defineQueries({
     current: defineQuery(({ ctx }) => {
       const userId = requireUser(ctx);
       return zql.show
-        .where("isActive", true)
+        .where("status", "live")
         .where(({ or, cmp, exists }) =>
           or(
             cmp("isPublic", true),
@@ -36,6 +36,26 @@ export const queries = defineQueries({
           ),
         )
         .related("segments", (segments) => segments.where("isCurrent", true))
+        .one();
+    }),
+    next: defineQuery(({ ctx }) => {
+      const userId = requireUser(ctx);
+      return zql.show
+        .where("status", "scheduled")
+        .where(({ or, cmp, exists }) =>
+          or(
+            cmp("isPublic", true),
+            exists("grants", (grant) =>
+              grant.whereExists("group", (group) =>
+                group.whereExists("members", (member) =>
+                  member.where("userId", userId),
+                ),
+              ),
+            ),
+          ),
+        )
+        .orderBy("scheduledStart", "asc")
+        .orderBy("id", "asc")
         .one();
     }),
   },

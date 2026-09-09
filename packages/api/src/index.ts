@@ -8,6 +8,14 @@ const app = new Elysia({ prefix: "/api" })
   .use(cors({ origin: webOrigin, credentials: true }))
   .mount(auth.handler)
   .use(betterAuth)
+  .get(
+    "/time",
+    ({ set }) => {
+      set.headers["cache-control"] = "no-store";
+      return { now: Date.now() };
+    },
+    { auth: true },
+  )
   .use(zero)
   .listen(3000);
 

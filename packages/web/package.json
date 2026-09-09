@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10",
+    "@types/bun": "^1.4.2",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
