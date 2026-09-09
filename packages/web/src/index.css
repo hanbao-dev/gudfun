@@ -128,3 +128,40 @@
     @apply font-sans;
     }
 }
+/* A slim television surround. The picture palette stays legible in either app theme. */
+:root {
+  --tv-picture: oklch(0.205 0.015 160);
+  --tv-ink: oklch(0.94 0.026 100);
+}
+.dark {
+  --tv-picture: oklch(0.17 0.012 160);
+  --tv-ink: oklch(0.9 0.025 100);
+}
+.tv-set {
+  background: linear-gradient(155deg, var(--muted), var(--card) 45%, var(--muted));
+  box-shadow: 0 2px 0 var(--border), 0 18px 45px -25px color-mix(in oklch, var(--foreground) 25%, transparent);
+}
+.tv-screen {
+  color: var(--tv-ink);
+  background: var(--tv-picture);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--tv-ink) 12%, transparent), inset 0 0 35px color-mix(in oklch, var(--tv-picture) 90%, transparent);
+}
+.tv-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  border-radius: inherit;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in oklch, var(--tv-ink) 3%, transparent) 3px 4px);
+}
+.tv-standby {
+  background-image: radial-gradient(ellipse at center, color-mix(in oklch, var(--tv-ink) 8%, transparent), transparent 70%), linear-gradient(color-mix(in oklch, var(--tv-ink) 3%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklch, var(--tv-ink) 3%, transparent) 1px, transparent 1px);
+  background-size: auto, 44px 44px, 44px 44px;
+  background-position: center;
+}
+.tv-station-mark { border-color: color-mix(in oklch, var(--tv-ink) 35%, transparent); }
+.tv-speaker { background: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 4px); }
+.tv-screen .text-muted-foreground { color: color-mix(in oklch, var(--tv-ink) 70%, var(--tv-picture)); }
+.tv-screen:fullscreen { border-radius: 0; padding: clamp(1rem, 4vw, 4rem); }
+.tv-screen:fullscreen video { max-height: 75dvh; }
