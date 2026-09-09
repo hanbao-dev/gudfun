@@ -9,12 +9,14 @@ export function ShowScreen({
   detail,
   children,
   standby = false,
+  fullscreen = true,
 }: {
-  title: string
+  title?: string
   status: string
   detail?: string
   children: ReactNode
   standby?: boolean
+  fullscreen?: boolean
 }) {
   const screen = useRef<HTMLDivElement>(null)
   const [error, setError] = useState(false)
@@ -60,43 +62,47 @@ export function ShowScreen({
                 className="tv-speaker hidden h-3 w-16 text-muted-foreground/40 sm:block"
                 aria-hidden="true"
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="View show fullscreen"
-                className="size-7 rounded-full text-muted-foreground"
-                onClick={() => {
-                  setError(false)
-                  if (!screen.current?.requestFullscreen) {
-                    setError(true)
-                    return
-                  }
-                  void screen.current
-                    .requestFullscreen()
-                    .catch(() => setError(true))
-                }}
-              >
-                <Maximize2 className="size-3.5" />
-              </Button>
+              {fullscreen && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="View show fullscreen"
+                  className="size-7 rounded-full text-muted-foreground"
+                  onClick={() => {
+                    setError(false)
+                    if (!screen.current?.requestFullscreen) {
+                      setError(true)
+                      return
+                    }
+                    void screen.current
+                      .requestFullscreen()
+                      .catch(() => setError(true))
+                  }}
+                >
+                  <Maximize2 className="size-3.5" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
-      <div className="flex flex-wrap items-start justify-between gap-3 px-1">
-        <div className="space-y-1">
-          <p className="font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
-            {status === "On air" ? "Now showing" : "On the channel"}
-          </p>
-          <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
-            {title}
-          </h1>
+      {title && (
+        <div className="flex flex-wrap items-start justify-between gap-3 px-1">
+          <div className="space-y-1">
+            <p className="font-mono text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
+              {status === "On air" ? "Now showing" : "On the channel"}
+            </p>
+            <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
+              {title}
+            </h1>
+          </div>
+          {detail && (
+            <p className="max-w-sm text-sm text-muted-foreground sm:pt-5">
+              {detail}
+            </p>
+          )}
         </div>
-        {detail && (
-          <p className="max-w-sm text-sm text-muted-foreground sm:pt-5">
-            {detail}
-          </p>
-        )}
-      </div>
+      )}
       {error && (
         <p role="status" className="text-sm text-muted-foreground">
           Fullscreen isn’t available in this browser. You can keep watching
