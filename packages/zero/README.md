@@ -1,65 +1,114 @@
-# Show foundation
+# Shows, schedules, and segments
 
-Show definitions, permission-scoped queries, and mutations live in this shared
-package. UI components are replaceable consumers of these operations.
+Shared definitions, permission-scoped queries, and transactional mutations live
+here. UI components are replaceable consumers of these operations.
 
 ## Local setup
 
-Run `bun run db:migrate` with your existing local database configuration, then
-restart the API and Zero cache to pick up the schema. The feature migration adds
-`user.is_admin` with a default of `false`. Manually set that column to `true` for
-your chosen existing user, then sign out and back in to refresh the auth session.
-There is no public mutation or auth input for changing this flag.
+Run `bun run db:migrate` using your existing local configuration, then restart the
+API and Zero cache. This phase's generated migration preserves existing active
+shows as live, inactive definitions as drafts, and placeholder configuration as
+`{}`. Migrated live shows have `actualStart = null`: their historical start is
+unknown. The migration was verified against isolated PGlite, not applied to the
+local application database by the implementation agent.
 
-Admin management lives at `/admin/settings`, linked from the authenticated app
-for admins. Its client route guard waits for the user record and redirects
-non-admins to `/`; signed-out visitors return to the login page. The main `/`
-page only displays the current show. API authorization still protects all
-management operations independently of this SPA guard.
+The earlier foundation added `user.is_admin` (default false). Set it manually for
+your chosen existing user, then sign out/in. No public mutation changes that flag.
+Authentication remains exclusively through X. Management is at `/admin/settings`;
+`/` is the viewer. API and mutation authorization is independent of the SPA guard.
 
-An admin can create groups, toggle membership for existing users, create an
-inactive public or private show, grant groups access to private shows, add/reorder segments, select a current
-segment, and activate the show. Deactivate the previous show before activating
-another. Public shows are visible to all logged-in users without groups. Private shows
-without grants are visible to nobody, including admins in the viewer experience.
-Existing shows default to private. Switching to public preserves saved grants,
-which apply again when the show is made private. Admin management queries can still inspect inactive and
-unassigned shows.
+## Lifecycle
 
-The viewer resolves only an active show that is public or has a grant to one of
-their groups. Public visibility still requires authentication.
-Its segment relation includes only the current segment. No active show and no
-access deliberately share the same empty state. Removing a membership, grant,
-or group removes that private-show access. Group deletion also removes its memberships and
-grants.
+- New shows are drafts. Drafts can be scheduled or started immediately.
+- Scheduled shows can be rescheduled, returned to draft, or started early/late.
+- Start is manual and preserves any preselected segment. A live show with no
+  selected segment displays a waiting state.
+- End is manual, clears selection, and preserves definitions/configuration.
+  Ended shows are read-only; there is no restart, deletion, or archive UI.
+- Repeated starts on a live show and repeated ends on an ended show are no-ops.
+  Starting an ended show is rejected. Actual timestamps come only from server
+  execution, never mutation arguments or optimistic client time.
 
-## Extending the foundation
+The `status` column replaces `isActive`. PostgreSQL checks enforce valid timestamp
+combinations; a partial unique index permits only one live show globally. Another
+partial unique index permits one selected segment per show. Server mutations lock
+the show row before lifecycle or segment reads/writes so competing changes to the
+same show serialize. Group membership remains independent of show lifecycle;
+deleting a group still removes its memberships and access grants.
 
-`src/show-definitions.ts` defines valid segment and feature keys and labels.
-Persisted keys use text/JSON, so adding a key does not require a SQL migration.
-Only `placeholder` segments exist. `chat` and `reactions` are reserved configuration
-flags with no implemented experience. `hasShowFeature` is the shared feature
-check. Add future renderers independently of the queries and mutations.
+## Viewer and time
 
-The basic show state is active/inactive. PostgreSQL partial unique indexes enforce
-one active show globally and one current segment per show, including competing
-writes. Selecting a segment clears the previous selection in the same transaction.
-Ordering validates the complete segment ID list and sorts ties by ID, so concurrent
-appends remain deterministic. No scheduling, media, or custom realtime transport
-is included; the application continues to use its existing Zero data layer.
+`shows.current` returns the accessible live show and only its selected segment.
+`shows.next` returns one accessible scheduled show, ordered by scheduled instant
+and then ID, without its segments. `resolveViewerShow` gives live state priority.
+An inaccessible live show does not hide an accessible schedule. When a show ends,
+the viewer resolves the next schedule or the empty state. There is no schedule
+list. An overdue schedule waits for the host until manually started/rescheduled
+or returned to draft; no expiry or automatic lifecycle transitions are added.
 
-All admin mutations check the current database user inside the transaction.
-Admin query context is constructed by the API from a fresh database lookup;
-client-provided admin claims are not accepted by that endpoint. Mutations only
-need userId in server context: they resolve isAdmin within the transaction rather
-than trusting a pre-transaction flag. The optional context flag is for queries.
-Group and membership tables live in schemas/groups; show tables, segments, and
-show access grants live in schemas/shows in the database package. Viewer access is
-part of the query itself. Authentication remains exclusively through X.
+Public means all authenticated users. Private shows require membership in a
+granted group, including for admins using the viewer. Without grants, nobody can
+view a private show. Switching public/private preserves grants. Admin queries can
+inspect all shows, including drafts and ended shows. Mutations re-read admin
+status inside their transaction; query context is resolved by the API from the
+current database user.
 
-## Validation
+Scheduling input uses the admin browser's IANA timezone and accepts dates from
+2000 through 2100. A resolved date/time and zone are shown before saving. Invalid
+calendar dates, daylight-saving gaps, and repeated local times are rejected;
+choose a time outside the repeated hour. PostgreSQL stores `timestamptz`; Zero
+represents these instants as epoch milliseconds. Viewer dates include the local
+date and timezone, including when viewers are on different calendar days.
 
-`bun test` runs the generated migrations and the real Zero queries/mutations
-against an isolated in-memory PGlite database; it never connects to your local
-application database. Tests cover authorization, access revocation, state changes,
-segment ordering/selection, validation, and database constraints.
+An authenticated, uncached `/api/time` endpoint supplies server time. The browser
+estimates one-way latency from the request round trip, anchors to
+`performance.now()`, and refreshes on login/Zero reconnect, tab return, pageshow,
+network return, and every minute while visible. Refresh also resolves both show
+queries with Zero's complete-result option. Failed synchronization leaves the
+absolute schedule visible and withholds the countdown rather than trusting the
+device wall clock. Disconnected viewers see a reconnecting state. Countdown zero
+means waiting for the host; it cannot mark a show live.
+
+## Adding a segment type
+
+1. Add its key, label, and configuration schema to `segmentTypes` in
+   `src/show-definitions.ts`, and add its branch to `segmentConfigurationSchema`.
+   Use `SegmentConfiguration<"yourType">` for its matching TypeScript type.
+2. Add its React renderer to the exhaustive renderer map and dispatch in
+   `packages/web/src/components/segment-renderer.tsx`. Keep React out of shared
+   validation. Saved unknown/invalid data must retain a safe fallback.
+3. Add matching fields to `segment-editor.tsx` and test valid/invalid data.
+
+Keys and configuration use text/JSON, so new types do not need SQL migrations.
+The initial types are `placeholder` with `{}` and `introVideo` with a validated
+HTTP(S) `url`. Video uses native controls and an explicit play action; it is not
+synchronized. Failed playback displays a waiting message. There are no embeds,
+uploads, hosting integrations, or autoplay requirements.
+
+Segments can be retitled, reconfigured, changed to another validated type,
+reordered, or deleted until the show ends. Deleting the current row atomically
+clears selection without selecting a replacement. `chat` and `reactions` remain
+reserved show-level feature keys with no implemented experience.
+
+## Validation and limits
+
+`bun --no-env-file test` runs isolated PGlite migrations and real Zero operations,
+time conversion checks, browser lifecycle controller tests, and renderer checks.
+Tests cover authorization, private/public access and revocation, lifecycle and
+repeat commands, one-live constraints, next-show resolution, configuration,
+selection/deletion, migration preservation, date boundaries, DST (including
+half-hour changes), server clock anchoring, reconnect/resume, and stale responses.
+
+Implementation checks: web lint, web TypeScript project build, production bundle,
+and Zero/API/database type checks. Bun 1.4.2 from a temporary runtime was used for
+generators because the installed default is Bun 1.2.22. The migration and Zero
+schema were generated, with an inspected SQL backfill added before dropping the
+old active column; generated metadata/schema were not hand-edited.
+
+Real browser end-to-end login, light/dark visual inspection, media decoding/error
+handling, and real Zero network/suspension behavior remain unverified. Controller
+and renderer tests do not substitute for those browser checks. PGlite serializes
+transactions, so its competing-start test is not a multi-connection PostgreSQL
+stress test. Use ordinary private shows granted to a test group for browser QA.
+No recording, attendance, participation, LiveKit, chat, or deployment work is
+included.

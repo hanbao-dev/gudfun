@@ -1,5 +1,11 @@
 # Next implementation: scheduling and segment configuration
 
+Implementation notes and validation are now in
+[`packages/zero/README.md`](../packages/zero/README.md). Clarifications accepted
+before implementation: viewers need only the next show, with no additional
+overdue-management workflow; ended shows are read-only. Show deletion, recording,
+attendance, and participation tracking remain outside this phase.
+
 ## Handoff status
 
 This branch is based on `develop` at `e6b5245`, which includes merged PR #2.

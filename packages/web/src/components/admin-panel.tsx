@@ -1,13 +1,13 @@
+import { ShowSchedule } from "@/components/show-schedule"
+import { SegmentEditor } from "@/components/segment-editor"
 import { useState } from "react"
 import { useQuery, useZero } from "@rocicorp/zero/react"
 import {
   mutators,
   queries,
-  segmentTypes,
   showFeatureTypes,
   type Schema,
   type ShowFeature,
-  type SegmentType,
 } from "zero"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -197,12 +197,19 @@ export function AdminPanel() {
             {shows.map((s) => (
               <NativeSelectOption key={s.id} value={s.id}>
                 {s.title}
-                {s.isActive ? " (active)" : ""}
+                {` (${s.status})`}
               </NativeSelectOption>
             ))}
           </NativeSelect>
           {show && (
-            <div className="space-y-4 rounded-lg border p-4">
+            <fieldset
+              disabled={show.status === "ended"}
+              className="space-y-4 rounded-lg border p-4"
+            >
+              <ShowSchedule
+                key={`${show.id}:${show.scheduledStart}`}
+                show={show}
+              />
               <form
                 key={`${show.id}:${show.title}`}
                 className="flex gap-2"
@@ -231,24 +238,6 @@ export function AdminPanel() {
                 />
                 <Button type="submit">Save title</Button>
               </form>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  void run(() =>
-                    zero.mutate(
-                      mutators.shows.setActive({
-                        id: show.id,
-                        isActive: !show.isActive,
-                      })
-                    )
-                  )
-                }
-              >
-                {show.isActive ? "Deactivate show" : "Activate show"}
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Deactivate the current show before activating another.
-              </p>
               <h4 className="font-medium">Visibility</h4>
               <NativeSelect
                 aria-label="Show visibility"
@@ -346,39 +335,7 @@ export function AdminPanel() {
                 )}
               </div>
               <h4 className="font-medium">Segments</h4>
-              <form
-                className="flex flex-wrap gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const data = new FormData(e.currentTarget)
-                  void run(() =>
-                    zero.mutate(
-                      mutators.segments.add({
-                        id: crypto.randomUUID(),
-                        showId: show.id,
-                        title: String(data.get("title")),
-                        type: String(data.get("type")) as SegmentType,
-                      })
-                    )
-                  )
-                }}
-              >
-                <Input
-                  name="title"
-                  aria-label="Segment title"
-                  placeholder="Segment title"
-                  required
-                  maxLength={200}
-                />
-                <NativeSelect name="type" aria-label="Segment type">
-                  {Object.entries(segmentTypes).map(([value, type]) => (
-                    <NativeSelectOption key={value} value={value}>
-                      {type.label}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-                <Button type="submit">Add segment</Button>
-              </form>
+              <SegmentEditor key={show.id} showId={show.id} />
               {!show.segments.length && (
                 <p className="text-sm text-muted-foreground">
                   No segments yet.
@@ -393,6 +350,15 @@ export function AdminPanel() {
                     {index + 1}. {segment.title}
                     {segment.isCurrent ? " (current)" : ""}
                   </span>
+                  <SegmentEditor
+                    key={JSON.stringify([
+                      segment.title,
+                      segment.type,
+                      segment.configuration,
+                    ])}
+                    showId={show.id}
+                    segment={segment}
+                  />
                   {([-1, 1] as const).map((direction) => (
                     <Button
                       key={direction}
@@ -435,7 +401,7 @@ export function AdminPanel() {
                   </Button>
                 </div>
               ))}
-            </div>
+            </fieldset>
           )}
         </section>
       </fieldset>
