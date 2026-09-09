@@ -19,11 +19,11 @@ function environment() {
     now: () => elapsed,
     interval: (callback: () => void, ms: number) => {
       timers.set(ms, callback)
-      return ms as unknown as ReturnType<typeof setInterval>
+      return ms
     },
-    clearInterval: ((id: ReturnType<typeof setInterval>) => {
-      timers.delete(Number(id))
-    }) as typeof clearInterval,
+    clearInterval: (id: number) => {
+      timers.delete(id)
+    },
   }
 }
 test("login, tab return, pageshow, network reconnect and periodic refresh resync time and show state", async () => {
@@ -108,4 +108,49 @@ test("stale responses cannot replace a newer clock; failures never use device ti
   env.timers.get(1000)!()
   expect(times.at(-1)).toBeNull()
   stop()
+})
+
+test("default browser timers keep the Window receiver during effect cleanup", () => {
+  const keys = ["window", "document", "clearInterval"] as const
+  const originals = keys.map(
+    (key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const
+  )
+  const cleared: number[] = []
+  const browser = Object.assign(new EventTarget(), {
+    setInterval(this: unknown, _callback: () => void, ms: number) {
+      if (this !== browser) throw new TypeError("Illegal invocation")
+      return ms
+    },
+    clearInterval(this: unknown, id: number) {
+      if (this !== browser) throw new TypeError("Illegal invocation")
+      cleared.push(id)
+    },
+  })
+  try {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: browser,
+    })
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: Object.assign(new EventTarget(), { visibilityState: "visible" }),
+    })
+    // Native browser functions validate their receiver; a plain timer mock missed this.
+    Object.defineProperty(globalThis, "clearInterval", {
+      configurable: true,
+      value: browser.clearInterval,
+    })
+    const stop = startShowClock({
+      readTime: async () => 1000,
+      refreshShows: async () => {},
+      onTime: () => {},
+    })
+    expect(() => stop()).not.toThrow()
+    expect(cleared).toEqual([1000, 60000])
+  } finally {
+    for (const [key, descriptor] of originals) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor)
+      else Reflect.deleteProperty(globalThis, key)
+    }
+  }
 })

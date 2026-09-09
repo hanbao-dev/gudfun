@@ -7,8 +7,8 @@ type ClockEnvironment = {
   >
   window: Pick<Window, "addEventListener" | "removeEventListener">
   now: () => number
-  interval: (callback: () => void, ms: number) => ReturnType<typeof setInterval>
-  clearInterval: typeof clearInterval
+  interval: (callback: () => void, ms: number) => number
+  clearInterval: (id: number) => void
 }
 
 // Browser lifecycle wiring lives outside React so reconnect, suspension and races can be tested.
@@ -26,8 +26,8 @@ export function startShowClock(
     document,
     window,
     now: () => performance.now(),
-    interval: (callback, ms) => setInterval(callback, ms),
-    clearInterval,
+    interval: (callback, ms) => window.setInterval(callback, ms),
+    clearInterval: (id) => window.clearInterval(id),
   }
 ) {
   let anchor: ReturnType<typeof serverTimeAnchor> | undefined
